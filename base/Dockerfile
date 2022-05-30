@@ -68,9 +68,10 @@ RUN echo "auth requisite pam_deny.so" >> /etc/pam.d/su && \
     sed -i.bak -e 's/^%admin/#%admin/' /etc/sudoers && \
     sed -i.bak -e 's/^%sudo/#%sudo/' /etc/sudoers && \
     ### Add a group with the same name as the user ###
-    groupadd -g $NB_GID $DOCKER_GRP && \
-    groupadd -g $DOCKER_GID $NB_USER && \
+    groupadd -g $DOCKER_GID $DOCKER_GRP && \
+    groupadd -g $NB_GID $NB_USER && \
     useradd -m -s /bin/bash -u $NB_UID -g $NB_GID $NB_USER && \
+    usermod -a -G $DOCKER_GRP $NB_USER && \
     mkdir -p $CONDA_DIR && \
     chown $NB_USER:$NB_GID $CONDA_DIR && \
     chmod g+w /etc/passwd && \

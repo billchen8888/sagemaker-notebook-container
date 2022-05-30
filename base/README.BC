@@ -1,0 +1,22 @@
+qtang's method will not work for https://github.com/aws-samples/amazon-sagemaker-local-mode/blob/main/blog/pytorch_cnn_cifar10/pytorch_local_mode_cifar10.ipynb  step 
+
+from sagemaker.pytorch import PyTorchModel
+
+cifar10_predictor = cifar10_estimator.deploy(initial_instance_count=1,
+                                             instance_type=instance_type)
+
+
+The reason is that this step runs in the 1st container, the lib/python##/site-packages/sagemaker/local/entities.py  line 630 checks the endpoint_url https://localhost:8080/ping
+To the container. localhost is itself.  But qtangs's methhod invokes the pytorch-0inference container in the OS level, then the 1st container will not be able to use it
+
+We can try to use DinD
+
+
+HOW to use this code:
+
+1) on an amznlinux2 EC2, install docker 20.10.30-2
+2) clone this repo and cd to base
+3) build the imsage
+4) BC_deploy.sh
+5) get the https://github.com/aws-samples/amazon-sagemaker-local-mode/blob/main/blog/pytorch_cnn_cifar10/pytorch_local_mode_cifar10.ipynb  to the data directory
+6) open the jupyter notebook
