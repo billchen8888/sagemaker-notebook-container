@@ -5,7 +5,7 @@ export IMAGE_NAME=bcsagemaker
 export WORKDDIR=/home/ec2-user
 export AWS_PROFILE=default-api
 
-chmod 666 /var/run/docker.dock
+##chmod 666 /var/run/docker.dock   the default  660 should work
 
 docker run -t --name=sagemakelocal \
            -p 8888:8888 \
