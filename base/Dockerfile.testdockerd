@@ -1,0 +1,39 @@
+# uses the google kicbase's logic about the systemd, but use regular docker package, not the one in kicbase
+FROM ubuntu:20.04
+
+RUN apt update &&apt install -y wget iptables libdevmapper-dev && \
+    apt install -y systemd \
+   && find /lib/systemd/system/sysinit.target.wants/ -name "systemd-tmpfiles-setup.service" -delete \
+    && rm -f /lib/systemd/system/multi-user.target.wants/* \
+    && rm -f /etc/systemd/system/*.wants/* \
+    && rm -f /lib/systemd/system/local-fs.target.wants/* \
+    && rm -f /lib/systemd/system/sockets.target.wants/*udev* \
+    && rm -f /lib/systemd/system/sockets.target.wants/*initctl* \
+    && rm -f /lib/systemd/system/basic.target.wants/* \
+    && echo "ReadKMsg=no" >> /etc/systemd/journald.conf \
+    && ln -s "$(which systemd)" /sbin/init \
+&& echo "Adjusting systemd-tmpfiles timer" \
+    && sed -i /usr/lib/systemd/system/systemd-tmpfiles-clean.timer -e 's#OnBootSec=.*#OnBootSec=1min#' \
+ && echo "Disabling udev" \
+    && systemctl disable udev.service \
+ && echo "Modifying /etc/nsswitch.conf to prefer hosts" \
+    && sed -i /etc/nsswitch.conf -re 's#^(hosts:\s*).*#\1dns files#'
+
+ENV container docker
+# systemd exits on SIGRTMIN+3, not SIGTERM (which re-executes it)
+# https://bugzilla.redhat.com/show_bug.cgi?id=1201657
+STOPSIGNAL SIGRTMIN+3
+
+
+RUN  wget https://download.docker.com/linux/ubuntu/dists/focal/pool/stable/amd64/docker-ce_20.10.16~3-0~ubuntu-focal_amd64.deb -O docker-ce.deb && \
+    wget https://download.docker.com/linux/ubuntu/dists/focal/pool/stable/amd64/docker-ce-cli_20.10.16~3-0~ubuntu-focal_amd64.deb -O docker-ce-cli.deb && \
+    wget https://download.docker.com/linux/ubuntu/dists/focal/pool/stable/amd64/containerd.io_1.6.4-1_amd64.deb   -O containerd.io.deb && \
+    dpkg -i containerd.io.deb && \
+    dpkg -i docker-ce-cli.deb
+
+RUN dpkg -i docker-ce.deb
+
+COPY entrypoint /usr/local/bin/entrypoint
+
+
+ENTRYPOINT [ "/usr/local/bin/entrypoint", "/sbin/init" ]
